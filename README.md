@@ -23,6 +23,12 @@ entirely from a WebUI. No root required.
 - 🖥 **Console drawer** — every shell command this module runs, and its raw
   output, is visible in-app. Nothing happens off-screen.
 
+
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/6532abb8-13f0-4b37-a262-88cc6096c53e" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/23c6b319-fe7b-4183-b5a6-0e6d557422e2" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/52c89639-4216-410b-9b21-ade59ee5bf37" />
+<img width="1080" height="2400" alt="Image" src="https://github.com/user-attachments/assets/937d5bfa-5271-4b9c-9005-f5ccee76fe18" />
+
 ## Requirements
 
 - [Shevery](https://github.com/HmnDev-Tech/shevery) with this module's
