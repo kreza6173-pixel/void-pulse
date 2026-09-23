@@ -16,8 +16,6 @@
   --ok: #37E27A;
   --radius-lg: 22px;
   --radius-sm: 12px;
-  /* system navigation-bar inset (3-button / gesture bar), from whichever source the host provides */
-  --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px), var(--window-inset-bottom, 0px));
 }
 
 * { box-sizing: border-box; }
@@ -30,7 +28,7 @@ body {
   font-family: 'Inter', -apple-system, sans-serif;
   overflow-x: hidden;
   min-height: 100vh;
-  padding-bottom: calc(90px + var(--sab));
+  padding-bottom: 90px;
 }
 
 h1, h2, h3, .display {
@@ -166,7 +164,7 @@ h1, h2, h3, .display {
 
 /* --- bottom nav ---------------------------------------------------------*/
 .bottomnav {
-  position: fixed; left: 12px; right: 12px; bottom: calc(14px + var(--sab));
+  position: fixed; left: 12px; right: 12px; bottom: 14px;
   display: flex; justify-content: space-around;
   padding: 10px 6px;
   border-radius: 999px;
@@ -243,7 +241,7 @@ h1, h2, h3, .display {
 
 /* --- fixed-px picker (never use vh — collapses to 0 in some WebViews) --*/
 .picker-sheet {
-  position: fixed; left: 12px; right: 12px; bottom: calc(14px + var(--sab));
+  position: fixed; left: 12px; right: 12px; bottom: 14px;
   background: var(--panel-solid);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-lg);
