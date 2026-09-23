@@ -1,42 +1,32 @@
 #!/system/bin/sh
-# void-silence — Action button summary.
-# Read-only: prints current state, changes nothing.
-
-DIR="$(cd "$(dirname "$0")" && pwd)"
+# VOID//PULSE — status summary (read-only, safe to run any time)
+DIR="$(dirname "$0")"
 . "$DIR/lib.sh"
 
-zen="$(settings get global zen_mode 2>/dev/null)"
-case "$zen" in
-  0) zen_label="Off" ;;
-  1) zen_label="Priority only" ;;
-  2) zen_label="Total silence" ;;
-  3) zen_label="Alarms only" ;;
-  *) zen_label="Unknown ($zen)" ;;
-esac
+echo "== VOID//PULSE status =="
+echo "session tier   : $(pulse_tier)"
 
-heads_up="$(settings get global heads_up_notifications_enabled 2>/dev/null)"
-[ "$heads_up" = "1" ] && heads_up_label="On" || heads_up_label="Off"
-
-listeners="$(settings get secure enabled_notification_listeners 2>/dev/null)"
-if [ -z "$listeners" ] || [ "$listeners" = "null" ]; then
-  listener_count=0
+jd="$(pulse_detect_jamesdsp)"
+if [ -n "$jd" ]; then
+  echo "JamesDSP       : detected ($jd)"
 else
-  listener_count="$(printf '%s' "$listeners" | tr ':' '\n' | grep -c .)"
+  echo "JamesDSP       : not installed"
 fi
 
-dnd_access="$(settings get secure enabled_notification_policy_access_packages 2>/dev/null)"
-if [ -z "$dnd_access" ] || [ "$dnd_access" = "null" ]; then
-  dnd_count=0
+if [ -f "$PULSE_HOME/active.json" ]; then
+  echo "active profile : $(cat "$PULSE_HOME/active.json" 2>/dev/null | head -c 200)"
 else
-  dnd_count="$(printf '%s' "$dnd_access" | tr ',' '\n' | grep -c .)"
+  echo "active profile : none saved yet"
 fi
 
-if [ -f "$SCHEDULE_FILE" ]; then
-  schedule_label="armed"
-else
-  schedule_label="not set"
-fi
+echo ""
+echo "-- current stream volumes (stream:index) --"
+pulse_current_volumes
 
-echo "DND: $zen_label  |  Heads-up: $heads_up_label"
-echo "Listener access: $listener_count app(s)  |  DND access: $dnd_count app(s)"
-echo "Schedule: $schedule_label"
+echo ""
+echo "-- detected OEM sound-related settings (informational) --"
+pulse_scan_audio_keys | head -n 25
+
+echo ""
+echo "-- log tail --"
+[ -f "$PULSE_LOG" ] && tail -n 15 "$PULSE_LOG" || echo "(no log yet)"

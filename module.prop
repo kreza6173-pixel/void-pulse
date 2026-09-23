@@ -1,7 +1,7 @@
-id=void-silence
-name=VOID//SILENCE
+id=void-pulse
+name=VOID//PULSE
 version=v1.0.0
 versionCode=1
 author=kreza6173-pixel
-description=Notification & DND control studio — system-wide Do Not Disturb presets and schedules, per-app notification muting, and listener/policy access management, all from one WebUI.
+description=Sound & Notification Studio — 10-band equalizer with genre/ASMR presets, a mic-reactive light show, Do Not Disturb/notification/listener control, and one AI Advisor across all of it. Auto-detects root vs shell-only session and adapts what it offers.
 usesShellBridge=true

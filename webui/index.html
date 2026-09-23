@@ -2,191 +2,310 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>VOID//SILENCE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="pulse-build" content="1.0.0-20260923">
+<title>VOID//PULSE</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="bridge-warning" class="bridge-warning hidden">
-  ⚠ WebUI Shell Bridge is not available. Set this module's access mode to
-  <strong>Full</strong>, or <strong>Custom</strong> with "WebUI shell bridge" enabled,
-  in Shevery → ADB Modules.
-  <div><button class="btn btn-ghost" id="bridge-retry-btn" style="margin-top:8px;">Retry connection</button></div>
+<div id="staleBanner" class="banner stale">
+  <span id="staleBannerText"></span>
+  <span class="close" onclick="document.getElementById('staleBanner').classList.remove('show')">✕</span>
+</div>
+<div id="errorBanner" class="banner error">
+  <span id="errorBannerText"></span>
+  <span class="close" onclick="document.getElementById('errorBanner').classList.remove('show')">✕</span>
 </div>
 
-<header class="topbar">
-  <div class="brand">
-    <span class="brand-mark">◈</span>
-    <div>
-      <div class="brand-title">VOID<span class="slash">//</span>SILENCE</div>
-      <div class="brand-sub">Notification &amp; DND Studio</div>
-    </div>
-  </div>
-  <div id="bridge-badge" class="bridge-badge">checking…</div>
-</header>
-
-<nav class="tabs">
-  <button class="tab active" data-tab="quick">Quick Controls</button>
-  <button class="tab" data-tab="apps">Per-App Mute</button>
-  <button class="tab" data-tab="access">Listener / DND Access</button>
-  <button class="tab" data-tab="schedule">Schedule</button>
+<div class="drawer-scrim" id="drawerScrim" onclick="closeDrawer()"></div>
+<nav class="drawer" id="drawer">
+  <div class="drawer-title">VOID//PULSE</div>
+  <div class="drawer-item" data-view="mixer" onclick="switchView('mixer')">🎚 Mixer</div>
+  <div class="drawer-item" data-view="eq" onclick="switchView('eq')">🎛 Equalizer</div>
+  <div class="drawer-item" data-view="lightshow" onclick="switchView('lightshow')">✨ Light Show</div>
+  <div class="drawer-item" data-view="dnd" onclick="switchView('dnd')">🔕 Do Not Disturb</div>
+  <div class="drawer-item" data-view="apps" onclick="switchView('apps')">📵 Per-App Mute</div>
+  <div class="drawer-item" data-view="access" onclick="switchView('access')">🔐 Listener/DND Access</div>
+  <div class="drawer-item" data-view="schedule" onclick="switchView('schedule')">⏱ Schedule</div>
+  <div class="drawer-item" data-view="ai" onclick="switchView('ai')">🤖 AI Advisor</div>
+  <div class="drawer-item" data-view="vault" onclick="switchView('vault')">🗄 Vault</div>
+  <div class="drawer-item" data-view="console" onclick="switchView('console')">🖥 Console</div>
+  <div class="drawer-item" data-view="settings" onclick="switchView('settings')">⚙ Settings</div>
 </nav>
 
-<main class="content">
+<header class="topbar">
+  <div class="iconbtn" onclick="openDrawer()">☰</div>
+  <div class="brand display">VOID//PULSE</div>
+  <div class="tier-badge" id="tierBadge">detecting…</div>
+</header>
 
-  <!-- QUICK CONTROLS -->
-  <section id="tab-quick" class="panel active">
-    <div class="card">
-      <div class="card-title">Do Not Disturb</div>
-      <div class="zen-grid" id="zen-grid">
-        <button class="zen-btn" data-zen="0">
-          <span class="zen-icon">🔔</span><span>Off</span>
-        </button>
-        <button class="zen-btn" data-zen="1">
-          <span class="zen-icon">🔕</span><span>Priority only</span>
-        </button>
-        <button class="zen-btn" data-zen="3">
-          <span class="zen-icon">⏰</span><span>Alarms only</span>
-        </button>
-        <button class="zen-btn" data-zen="2">
-          <span class="zen-icon">🔇</span><span>Total silence</span>
-        </button>
-      </div>
-      <div class="current-state" id="zen-current">Current: —</div>
+<main>
+
+  <!-- MIXER ------------------------------------------------------------ -->
+  <section class="view active" id="view-mixer">
+    <div class="panel">
+      <div class="panel-title">Stream volumes</div>
+      <div id="volumeRows"></div>
     </div>
-
-    <div class="card">
-      <div class="card-title">Heads-up (pop-up) notifications</div>
-      <div class="row-between">
-        <span class="muted">Show floating banners for incoming notifications</span>
-        <label class="switch">
-          <input type="checkbox" id="heads-up-toggle">
-          <span class="slider"></span>
-        </label>
+    <div class="panel">
+      <div class="panel-title">Stereo</div>
+      <div class="row">
+        <div><div class="label">Mono audio</div><div class="sub">Combine L/R into one channel</div></div>
+        <div class="switch" id="swMono" onclick="toggleMono()"><div class="knob"></div></div>
       </div>
+      <div class="row">
+        <div><div class="label">Balance</div><div class="sub" id="balanceVal">Center</div></div>
+      </div>
+      <input type="range" id="balanceSlider" min="-10" max="10" value="0" style="width:100%">
     </div>
-
-    <div class="card">
-      <div class="card-title">Snapshot</div>
-      <div class="stat-grid">
-        <div class="stat"><span class="stat-value" id="stat-listeners">—</span><span class="stat-label">listener access</span></div>
-        <div class="stat"><span class="stat-value" id="stat-dnd">—</span><span class="stat-label">DND access</span></div>
-        <div class="stat"><span class="stat-value" id="stat-schedule">—</span><span class="stat-label">schedule</span></div>
+    <div class="panel">
+      <div class="panel-title">Detected OEM sound settings</div>
+      <div class="sub" style="margin-bottom:10px">Informational only — shown as found on this device, not editable here.</div>
+      <div id="oemScanList" class="console-log">Tap "Rescan" to check this device.</div>
+      <button class="btn ghost block" style="margin-top:10px" onclick="rescanOem()">Rescan</button>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <div><div class="label" style="color:var(--danger)">Bypass safe-volume warning</div><div class="sub">Removes Android's hearing-safety volume cap. Can enable dangerously loud output — use short listening sessions and good headphones.</div></div>
+        <div class="switch" id="swSafeBypass" onclick="toggleSafeBypass()"><div class="knob"></div></div>
       </div>
     </div>
   </section>
 
-  <!-- PER-APP MUTE -->
-  <section id="tab-apps" class="panel">
-    <div class="card">
-      <div class="card-title">Per-app notification mute</div>
-      <p class="muted small">
-        Fully blocks an app from posting notifications, via the
-        <code>POST_NOTIFICATIONS</code> runtime permission. Requires the app to
-        target Android 13 (API 33) or higher — apps that don't will show as
-        <em>N/A</em> and aren't reliably controllable this way; use the system
-        notification settings link instead for those.
-      </p>
-      <div class="row-between">
-        <input type="text" id="app-search" class="text-input" placeholder="Filter by package name…">
-        <label class="check-inline"><input type="checkbox" id="app-scope-user" checked> User apps only</label>
+  <!-- EQUALIZER ---------------------------------------------------------->
+  <section class="view" id="view-eq">
+    <div class="panel">
+      <div class="row">
+        <div>
+          <div class="label" id="activePresetName">Flat / Reference</div>
+          <div class="sub" id="activePresetDesc">No coloring — a neutral reference curve.</div>
+        </div>
       </div>
-      <div id="app-list" class="app-list">
-        <div class="empty-state">Run a scan to list installed apps.</div>
-      </div>
-      <button class="btn btn-secondary" id="scan-apps-btn">Scan installed apps</button>
+      <div class="eq-rack" id="eqRack"></div>
+      <button class="btn block" style="margin-top:14px" onclick="applyEqProfile()">Apply</button>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Presets</div>
+      <button class="btn ghost block" onclick="openPresetPicker()">Choose a preset →</button>
+    </div>
+    <div class="panel" id="engineBridgePanel">
+      <div class="panel-title">Engine</div>
+      <div class="sub" id="engineStatus">Checking for a real-time DSP engine…</div>
+      <button class="btn ghost block" id="exportGraphicEqBtn" style="margin-top:10px" onclick="exportGraphicEq()">Export as GraphicEQ file</button>
+      <button class="btn ghost block" id="openJamesDspBtn" style="margin-top:8px;display:none" onclick="openJamesDsp()">Open JamesDSP</button>
     </div>
   </section>
 
-  <!-- LISTENER / DND ACCESS -->
-  <section id="tab-access" class="panel">
-    <div class="card">
-      <div class="card-title">Notification Listener access</div>
-      <p class="muted small">
-        Apps that are allowed to read your notifications (component form:
-        <code>package/Class</code>). Granting this without knowing exactly what
-        the app does is a real privacy risk — only grant it to apps you trust.
-      </p>
-      <div id="listener-list" class="grant-list"></div>
-      <div class="add-row">
-        <input type="text" id="listener-input" class="text-input" placeholder="package.name/package.name.ListenerService">
-        <button class="btn btn-secondary" id="listener-add-btn">Grant</button>
+  <!-- LIGHT SHOW ---------------------------------------------------------->
+  <section class="view" id="view-lightshow">
+    <div class="panel">
+      <div class="panel-title">Mic-reactive visualizer</div>
+      <div class="sub" style="margin-bottom:10px">Listens through the microphone to react to whatever is actually playing — this is ambient listening, not internal audio capture, so it reacts to anything audible in the room.</div>
+      <div class="stage">
+        <canvas id="stageCanvas"></canvas>
+        <div class="stage-hint" id="stageHint">Tap Start to grant microphone access and begin the show.</div>
       </div>
-      <button class="btn btn-ghost" id="listener-detect-btn">Try to detect listener services for a package…</button>
+      <button class="btn block" style="margin-top:12px" id="lightShowToggle" onclick="toggleLightShow()">Start</button>
     </div>
+    <div class="panel">
+      <div class="row"><div class="label">Sensitivity</div></div>
+      <input type="range" id="sensSlider" min="1" max="10" value="5" style="width:100%">
+      <div class="row" style="margin-top:6px">
+        <div class="label">Color theme</div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:6px">
+        <button class="btn ghost" onclick="setLightTheme('cyber')">Cyber</button>
+        <button class="btn ghost" onclick="setLightTheme('magma')">Magma</button>
+        <button class="btn ghost" onclick="setLightTheme('void')">Void</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Sleep fade timer</div>
+      <div class="sub" style="margin-bottom:10px">Fades stream volume to zero over the chosen time. Runs only while this app is open in the foreground.</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn ghost" onclick="startFadeTimer(15)">15 min</button>
+        <button class="btn ghost" onclick="startFadeTimer(30)">30 min</button>
+        <button class="btn ghost" onclick="startFadeTimer(60)">60 min</button>
+        <button class="btn danger" onclick="cancelFadeTimer()">Cancel</button>
+      </div>
+      <div class="sub" id="fadeStatus" style="margin-top:8px"></div>
+    </div>
+  </section>
 
-    <div class="card">
-      <div class="card-title">DND (Notification Policy) access</div>
-      <p class="muted small">
-        Apps allowed to change Do Not Disturb state on their own (package-level,
-        no component needed).
-      </p>
-      <div id="dnd-access-list" class="grant-list"></div>
-      <div class="add-row">
-        <input type="text" id="dnd-access-input" class="text-input" placeholder="package.name">
-        <button class="btn btn-secondary" id="dnd-access-add-btn">Grant</button>
+  <!-- DO NOT DISTURB ------------------------------------------------------->
+  <section class="view" id="view-dnd">
+    <div class="panel">
+      <div class="panel-title">Do Not Disturb</div>
+      <div class="zen-grid" id="zenGrid">
+        <div class="zen-btn" data-zen="0" onclick="setZen(0)"><span class="zen-ic">🔔</span>Off</div>
+        <div class="zen-btn" data-zen="1" onclick="setZen(1)"><span class="zen-ic">🔕</span>Priority only</div>
+        <div class="zen-btn" data-zen="3" onclick="setZen(3)"><span class="zen-ic">⏰</span>Alarms only</div>
+        <div class="zen-btn" data-zen="2" onclick="setZen(2)"><span class="zen-ic">🔇</span>Total silence</div>
+      </div>
+      <div class="sub" id="zenCurrent" style="margin-top:10px">Current: —</div>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <div><div class="label">Heads-up notifications</div><div class="sub">Show floating banners for incoming notifications</div></div>
+        <div class="switch" id="swHeadsUp" onclick="toggleHeadsUp()"><div class="knob"></div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Snapshot</div>
+      <div class="row"><div class="label">Listener access</div><div class="sub" id="statListeners">—</div></div>
+      <div class="row"><div class="label">DND access</div><div class="sub" id="statDnd">—</div></div>
+      <div class="row"><div class="label">Schedule</div><div class="sub" id="statSchedule">—</div></div>
+    </div>
+  </section>
+
+  <!-- PER-APP MUTE ----------------------------------------------------------->
+  <section class="view" id="view-apps">
+    <div class="panel">
+      <div class="panel-title">Per-app notification mute</div>
+      <div class="sub" style="margin-bottom:10px">Blocks an app from posting notifications via the POST_NOTIFICATIONS runtime permission. Requires the app to target Android 13+ — others show N/A.</div>
+      <input type="text" id="appSearch" placeholder="Filter by package name…" oninput="renderAppList()">
+      <div class="row" style="margin-top:8px">
+        <div class="label">User apps only</div>
+        <div class="switch on" id="swAppScope" onclick="toggleAppScope()"><div class="knob"></div></div>
+      </div>
+      <div id="appList" style="margin-top:10px">Run a scan to list installed apps.</div>
+      <button class="btn ghost block" style="margin-top:10px" onclick="scanApps()" id="scanAppsBtn">Scan installed apps</button>
+    </div>
+  </section>
+
+  <!-- LISTENER / DND ACCESS ---------------------------------------------------->
+  <section class="view" id="view-access">
+    <div class="panel">
+      <div class="panel-title">Notification Listener access</div>
+      <div class="sub" style="margin-bottom:10px">Apps allowed to read your notifications. Only grant to apps you trust.</div>
+      <div id="listenerList"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input type="text" id="listenerInput" placeholder="package/package.ListenerService" style="flex:1">
+        <button class="btn ghost" onclick="grantListener()">Grant</button>
+      </div>
+      <button class="btn ghost block" style="margin-top:8px" onclick="detectListener()">Try to detect listener services…</button>
+    </div>
+    <div class="panel">
+      <div class="panel-title">DND (Notification Policy) access</div>
+      <div id="dndAccessList"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input type="text" id="dndAccessInput" placeholder="package.name" style="flex:1">
+        <button class="btn ghost" onclick="grantDndAccess()">Grant</button>
       </div>
     </div>
   </section>
 
-  <!-- SCHEDULE -->
-  <section id="tab-schedule" class="panel">
-    <div class="card">
-      <div class="card-title">Scheduled DND window</div>
-      <p class="muted small">
-        Applied once when Shevery starts this module's session (e.g. on boot),
-        and any time you tap "Re-check now" below. This is <strong>not</strong> a
-        persistent background timer — see the README's Known Limitations for why.
-        If your DND state matters at an exact minute, apply it manually from
-        Quick Controls instead.
-      </p>
-      <div class="row-between">
-        <span>Enabled</span>
-        <label class="switch">
-          <input type="checkbox" id="schedule-enabled">
-          <span class="slider"></span>
-        </label>
+  <!-- SCHEDULE ----------------------------------------------------------------->
+  <section class="view" id="view-schedule">
+    <div class="panel">
+      <div class="panel-title">Scheduled DND window</div>
+      <div class="sub" style="margin-bottom:10px">Applied on session start and on "Re-check now" — not a persistent background timer.</div>
+      <div class="row">
+        <div class="label">Enabled</div>
+        <div class="switch" id="swScheduleEnabled" onclick="toggleScheduleEnabled()"><div class="knob"></div></div>
       </div>
-      <div class="schedule-grid">
-        <label>Start<input type="time" id="schedule-start" value="22:30"></label>
-        <label>End<input type="time" id="schedule-end" value="07:00"></label>
-        <label>Mode
-          <select id="schedule-zen">
-            <option value="1">Priority only</option>
-            <option value="3">Alarms only</option>
-            <option value="2" selected>Total silence</option>
-          </select>
-        </label>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input type="time" id="scheduleStart" value="22:30" style="flex:1">
+        <input type="time" id="scheduleEnd" value="07:00" style="flex:1">
       </div>
-      <div class="btn-row">
-        <button class="btn btn-primary" id="schedule-save-btn">Save schedule</button>
-        <button class="btn btn-secondary" id="schedule-recheck-btn">Re-check now</button>
+      <select id="scheduleZen" style="width:100%;margin-top:8px">
+        <option value="1">Priority only</option>
+        <option value="3">Alarms only</option>
+        <option value="2" selected>Total silence</option>
+      </select>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn block" onclick="saveSchedule()">Save schedule</button>
+        <button class="btn ghost block" onclick="recheckSchedule()">Re-check now</button>
       </div>
+    </div>
+  </section>
+
+  <!-- AI ADVISOR ----------------------------------------------------------->
+  <section class="view" id="view-ai">
+    <div class="panel">
+      <div class="panel-title">Provider</div>
+      <button class="btn ghost block" onclick="openProviderPicker()" id="providerPickBtn">Choose provider →</button>
+      <div class="row" style="margin-top:8px">
+        <div class="label">API key</div>
+      </div>
+      <input type="text" id="apiKeyInput" placeholder="Paste your API key" style="width:100%;padding:10px;border-radius:12px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.05);color:var(--text)">
+      <button class="btn ghost block" style="margin-top:8px" onclick="fetchModels()">Fetch models</button>
+      <button class="btn ghost block" style="margin-top:8px" onclick="openModelPicker()" id="modelPickBtn">Choose model →</button>
+    </div>
+    <div class="panel">
+      <div class="panel-title">What gets sent</div>
+      <div class="row"><div class="label">Active profile</div><div class="switch on" id="ctxProfile" onclick="toggleCtx('ctxProfile')"><div class="knob"></div></div></div>
+      <div class="row"><div class="label">Detected engine tier</div><div class="switch on" id="ctxTier" onclick="toggleCtx('ctxTier')"><div class="knob"></div></div></div>
+      <div class="row"><div class="label">DND / heads-up state</div><div class="switch on" id="ctxDnd" onclick="toggleCtx('ctxDnd')"><div class="knob"></div></div></div>
+      <div class="row"><div class="label">Listener/DND access package list</div><div class="switch" id="ctxAccess" onclick="toggleCtx('ctxAccess')"><div class="knob"></div></div></div>
+      <div class="row"><div class="label">Full log</div><div class="switch" id="ctxLog" onclick="toggleCtx('ctxLog')"><div class="knob"></div></div></div>
+      <button class="btn ghost block" style="margin-top:8px" onclick="previewContext()">Preview what will be sent</button>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Chat</div>
+      <div class="chat-log" id="chatLog"></div>
+      <div style="display:flex; gap:8px">
+        <input type="text" id="chatInput" placeholder="e.g. late-night lo-fi + rain ASMR, and silence everything but alarms" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.05);color:var(--text)">
+        <button class="btn" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- VAULT ---------------------------------------------------------------->
+  <section class="view" id="view-vault">
+    <div class="panel">
+      <div class="panel-title">Saved profiles</div>
+      <div id="vaultList"></div>
+      <button class="btn ghost block" style="margin-top:10px" onclick="saveCurrentAsProfile()">Save current EQ as profile</button>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Import / export</div>
+      <button class="btn ghost block" onclick="exportAllProfiles()">Export all as JSON</button>
+    </div>
+    <div class="panel">
+      <div class="row"><div class="label">Auto-apply last profile on boot</div>
+        <div class="switch" id="swAutoBoot" onclick="toggleAutoBoot()"><div class="knob"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONSOLE ---------------------------------------------------------------->
+  <section class="view" id="view-console">
+    <div class="panel">
+      <div class="panel-title">Shell command log</div>
+      <div class="sub" style="margin-bottom:10px">Every command this module runs, and its raw output. Nothing happens off-screen.</div>
+      <div class="console-log" id="consoleLog">(nothing run yet)</div>
+    </div>
+  </section>
+
+  <!-- SETTINGS ---------------------------------------------------------------->
+  <section class="view" id="view-settings">
+    <div class="panel">
+      <div class="panel-title">About</div>
+      <div class="sub">VOID//PULSE v1.0.0</div>
+      <div class="sub" id="settingsTierLine"></div>
     </div>
   </section>
 
 </main>
 
-<div class="console-drawer" id="console-drawer">
-  <div class="console-header" id="console-toggle">
-    <span>Console</span>
-    <span class="console-count" id="console-count">0</span>
-  </div>
-  <div class="console-body" id="console-body"></div>
+<nav class="bottomnav">
+  <div class="navbtn active" data-view="mixer" onclick="switchView('mixer')"><span class="ic">🎚</span>Mixer</div>
+  <div class="navbtn" data-view="eq" onclick="switchView('eq')"><span class="ic">🎛</span>EQ</div>
+  <div class="navbtn" data-view="dnd" onclick="switchView('dnd')"><span class="ic">🔕</span>DND</div>
+  <div class="navbtn" data-view="ai" onclick="switchView('ai')"><span class="ic">🤖</span>AI</div>
+  <div class="navbtn" data-view="vault" onclick="switchView('vault')"><span class="ic">🗄</span>Vault</div>
+</nav>
+
+<div class="picker-sheet" id="pickerSheet">
+  <input type="text" id="pickerFilter" placeholder="Filter…" oninput="filterPicker()">
+  <div id="pickerList"></div>
 </div>
 
-<div class="modal-backdrop hidden" id="confirm-backdrop">
-  <div class="modal">
-    <div class="modal-title" id="confirm-title">Confirm action</div>
-    <div class="modal-body" id="confirm-body"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
-      <button class="btn btn-danger" id="confirm-ok">Confirm</button>
-    </div>
-  </div>
-</div>
-
-<script src="script.js"></script>
+<script src="kb.js?v=1.0.0"></script>
+<script src="visualizer.js?v=1.0.0"></script>
+<script src="ai.js?v=1.0.0"></script>
+<script src="script.js?v=1.0.0"></script>
 </body>
 </html>
