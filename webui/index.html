@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="pulse-build" content="1.0.0-20260923">
 <title>VOID//PULSE</title>
 <link rel="stylesheet" href="style.css">
@@ -75,6 +75,12 @@
 
   <!-- EQUALIZER ---------------------------------------------------------->
   <section class="view" id="view-eq">
+    <div class="panel" id="engineBridgePanel">
+      <div class="panel-title">Engine</div>
+      <div class="sub" id="engineStatus">Checking for a real-time DSP engine…</div>
+      <button class="btn ghost block" id="exportGraphicEqBtn" style="margin-top:10px" onclick="exportGraphicEq()">Export as GraphicEQ file</button>
+      <button class="btn ghost block" id="openJamesDspBtn" style="margin-top:8px;display:none" onclick="openJamesDsp()">Open JamesDSP</button>
+    </div>
     <div class="panel">
       <div class="row">
         <div>
@@ -88,12 +94,6 @@
     <div class="panel">
       <div class="panel-title">Presets</div>
       <button class="btn ghost block" onclick="openPresetPicker()">Choose a preset →</button>
-    </div>
-    <div class="panel" id="engineBridgePanel">
-      <div class="panel-title">Engine</div>
-      <div class="sub" id="engineStatus">Checking for a real-time DSP engine…</div>
-      <button class="btn ghost block" id="exportGraphicEqBtn" style="margin-top:10px" onclick="exportGraphicEq()">Export as GraphicEQ file</button>
-      <button class="btn ghost block" id="openJamesDspBtn" style="margin-top:8px;display:none" onclick="openJamesDsp()">Open JamesDSP</button>
     </div>
   </section>
 

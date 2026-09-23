@@ -146,12 +146,32 @@ const SCHEDULE_FILE = "/data/local/tmp/.void-pulse-schedule.json";
       const row = document.createElement("div");
       row.className = "row";
       row.innerHTML =
-        '<div style="flex:1"><div class="label">' + s.label + '</div>' +
-        '<input type="range" min="0" max="25" value="12" style="width:100%" data-stream="' + s.stream + '"></div>';
+        '<div class="label">' + s.label + '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+        '<button class="iconbtn" data-dir="lower" data-stream="' + s.stream + '">−</button>' +
+        '<span class="val" style="min-width:22px;text-align:center" id="volVal' + s.stream + '">…</span>' +
+        '<button class="iconbtn" data-dir="raise" data-stream="' + s.stream + '">+</button>' +
+        '</div>';
       el.volumeRows.appendChild(row);
-      const slider = row.querySelector("input");
-      slider.addEventListener("change", function () { setVolume(s.stream, parseInt(slider.value, 10)); });
+      refreshVolumeReadout(s.stream);
     });
+    el.volumeRows.querySelectorAll("button[data-dir]").forEach(function (btn) {
+      btn.addEventListener("click", async function () {
+        const stream = parseInt(btn.dataset.stream, 10);
+        await exec("media volume --stream " + stream + " --adj " + btn.dataset.dir + " --show");
+        await refreshVolumeReadout(stream);
+      });
+    });
+  }
+
+  // Uses relative --adj raise/lower rather than a guessed --set index —
+  // each stream's real max (7 vs 15 vs 25, depending on stream/device) is
+  // never guessed, which is what made the old slider silently fail.
+  async function refreshVolumeReadout(stream) {
+    const res = await exec("media volume --stream " + stream + " --get");
+    const m = (res.stdout || "").match(/(\d+)/);
+    const readout = document.getElementById("volVal" + stream);
+    if (readout) readout.textContent = m ? m[1] : "?";
   }
 
   async function setVolume(stream, level) {
@@ -225,10 +245,11 @@ const SCHEDULE_FILE = "/data/local/tmp/.void-pulse-schedule.json";
   }
 
   window.applyEqProfile = async function () {
-    await pulseWriteFile("/data/local/tmp/void-pulse/active.json", JSON.stringify({
+    const res = await pulseWriteFile("/data/local/tmp/void-pulse/active.json", JSON.stringify({
       name: el.activePresetName.textContent, gains: state.activeGains, mono: state.mono, balance: state.balance
     }));
-    alert("Applied. System-level tone updated" + (state.jamesdsp ? " — export below to push real per-band shaping into " + state.jamesdsp + "." : "."));
+    if (res && res.ok === false) { alert("Saving the profile failed — check the Console tab for the exact error."); return; }
+    alert("Saved as the active profile." + (state.jamesdsp ? " This alone doesn't shape live audio — export it below and import into " + state.jamesdsp + " for that." : " Export below whenever you install a DSP engine like JamesDSP, since that's what actually applies per-band shaping."));
   };
 
   window.openPresetPicker = function () {
@@ -246,19 +267,23 @@ const SCHEDULE_FILE = "/data/local/tmp/.void-pulse-schedule.json";
     const name = (el.activePresetName.textContent || "custom").replace(/[^a-z0-9-]+/gi, "-").toLowerCase();
     const path = "/storage/emulated/0/Download/VOID-PULSE/" + name + ".txt";
     const res = await pulseWriteFile(path, line);
-    if (res.ok !== false) alert("Exported to Download/VOID-PULSE/" + name + ".txt — import it from JamesDSP's Graphic EQ screen.");
-    else alert("Export failed — check the Console tab.");
+    if (res && res.ok === true) alert("Exported to Download/VOID-PULSE/" + name + ".txt — import it from JamesDSP's Graphic EQ screen.");
+    else alert("Export failed — check the Console tab for the exact command and error.");
   };
 
-  window.openJamesDsp = function () {
+  window.openJamesDsp = async function () {
     if (!state.jamesdsp) return;
-    exec("monkey -p " + state.jamesdsp + " -c android.intent.category.LAUNCHER 1");
+    const res = await exec("monkey -p " + state.jamesdsp + " -c android.intent.category.LAUNCHER 1");
+    if (res && res.ok === false) alert("Couldn't launch " + state.jamesdsp + " — check the Console tab; it may need to be opened manually once first.");
   };
+
+  function shQuote(str) { return "'" + String(str).replace(/'/g, "'\\''") + "'"; }
 
   async function pulseWriteFile(path, text) {
-    const b64 = btoa(unescape(encodeURIComponent(text)));
+    // printf with a single-quoted, escaped payload — avoids depending on a
+    // base64 binary that isn't guaranteed to exist on every device/toolbox.
     const dir = path.substring(0, path.lastIndexOf("/"));
-    return exec("mkdir -p '" + dir + "' && echo '" + b64 + "' | base64 -d > '" + path + "'");
+    return exec("mkdir -p " + shQuote(dir) + " && printf '%s' " + shQuote(text) + " > " + shQuote(path));
   }
 
   // ---------- light show -----------------------------------------------------
